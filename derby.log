@@ -1,0 +1,13 @@
+----------------------------------------------------------------
+Mon May 15 19:05:19 IDT 2017:
+Booting Derby version The Apache Software Foundation - Apache Derby - 10.13.1.1 - (1765088): instance a816c00e-015c-0cdb-53a1-0000008573e8 
+on database directory /home/binyamink/git/DataProtector/DPAppDb with class loader sun.misc.Launcher$AppClassLoader@3d4eac69 
+Loaded from file:/home/binyamink/git/db-derby-10.13.1.1-bin/lib/derby.jar
+java.vendor=Oracle Corporation
+java.runtime.version=1.8.0_121-8u121-b13-0ubuntu1.16.04.2-b13
+user.dir=/home/binyamink/git/DataProtector
+os.name=Linux
+os.arch=amd64
+os.version=4.4.0-62-generic
+derby.system.home=null
+Database Class Loader started - derby.database.classpath=''

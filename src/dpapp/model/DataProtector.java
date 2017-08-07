@@ -19,7 +19,7 @@ public interface DataProtector {
 	
 	// Storing and retrieving user data to database.
 	// All user data should be stored encrypted.
-	public void storeUserData(AbstractUserData data);		// Store to database general data or strings.
+	public void storeUserData(UserData data);		// Store to database general data or strings.
 	public void storeFile(String fullPathToFile);	// Store to database binary file.
 	public void storeFile(File file);				// Store to database binary file.
 	public Collection<String> fetchAllTitles();		// Fetch 
@@ -27,6 +27,9 @@ public interface DataProtector {
 	public AbstractUserData fetchUserData(String title);
 	public Collection<AbstractUserData> fetchUserDataDataContaining(String text);
 	public Collection<AbstractUserData> fetchUserDataTitleContaining(String text);
+	public UserData fetchUserData(String title);
+	public Collection<UserData> fetchUserDataDataContaining(String text);
+	public Collection<UserData> fetchUserDataTitleContaining(String text);
 	public File fetchFile(String fullPathToFile);
 	
 }

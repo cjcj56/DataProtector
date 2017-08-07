@@ -2,9 +2,15 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+<<<<<<< HEAD
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/DbDerby1013"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/Hibernate5210"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/Utils"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/Spring436"/>
+=======
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/Hibernate5210"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/Spring436"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/DbDerby1013"/>
+>>>>>>> 6ceda517b0b947adde4ab1207956ca227b81cb6e
 	<classpathentry kind="output" path="bin"/>
 </classpath>

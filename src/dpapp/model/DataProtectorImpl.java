@@ -21,8 +21,17 @@ import utils.CryptServices;
 
 public class DataProtectorImpl extends AbstractDataProtector {
 	
+	private ServerConfiguration servConfigs;
+	private DataProtectorViewImpl viewer;
+	private Credentials loggedCreds;
+
+	
+		
 	public DataProtectorImpl(Credentials loggedCreds) {	
 		super(loggedCreds);
+		ApplicationContext context = new ClassPathXmlApplicationContext("spring.xml");
+		servConfigs = (ServerConfiguration) context.getBean("serverConfiguraiton");
+		this.loggedCreds = loggedCreds;
 	}
 
 	@Override
@@ -68,6 +77,12 @@ public class DataProtectorImpl extends AbstractDataProtector {
 	}
 
 	@Override
+	public void storeUserData(UserData data) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
 	public void storeFile(String fullPathToFile) {
 		// TODO Auto-generated method stub
 		
@@ -94,6 +109,10 @@ public class DataProtectorImpl extends AbstractDataProtector {
 	@Override
 	public File fetchFile(String fullPathToFile) {
 		// TODO Auto-generated method stub
+
+        }
+	public UserData fetchUserData(String title) {
+		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -106,11 +125,19 @@ public class DataProtectorImpl extends AbstractDataProtector {
 	@Override
 	public AbstractUserData fetchUserData(String title) {
 		// TODO Auto-generated method stub
+		
+	}
+	public Collection<UserData> fetchUserDataDataContaining(String text) {
+		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public Collection<AbstractUserData> fetchUserDataDataContaining(String text) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	public Collection<UserData> fetchUserDataTitleContaining(String text) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -120,6 +147,11 @@ public class DataProtectorImpl extends AbstractDataProtector {
 		// TODO Auto-generated method stub
 		return null;
 	}
+	public File fetchFile(String fullPathToFile) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
 	
 	
 	/*

@@ -16,9 +16,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
-
 import org.springframework.beans.factory.annotation.Autowired;
-
 import dpapp.model.DataProtectorImpl;
 
 public class DataProtectorViewImpl implements DataProtectorView {

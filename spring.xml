@@ -23,9 +23,12 @@
 			<property name = "rootDir" value = "/home/binyamink/DPApp"/>
     	</bean> 
  	</bean>
+<<<<<<< HEAD
  	
  	<bean id="dpapp" class="dpapp.model.DataProtectorImpl">
  		
  	</bean>
  	
+=======
+>>>>>>> 6ceda517b0b947adde4ab1207956ca227b81cb6e
 </beans>

@@ -1,8 +1,8 @@
 package dpapp.view;
 
 import java.awt.event.ActionEvent;
-
 import dpapp.controller.AppAuthenticator;
+import dpapp.model.AppAuthenticator;
 
 public class AppAuthenticatorViewImpl extends AbstractAppAuthenticatorView {
 	
@@ -10,6 +10,7 @@ public class AppAuthenticatorViewImpl extends AbstractAppAuthenticatorView {
 	
 	public AppAuthenticatorViewImpl(AppAuthenticator dpApp) {
 		this.dpApp = dpApp;
+
 	}
 	
 	

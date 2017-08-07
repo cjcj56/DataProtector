@@ -1,0 +1,14 @@
+
+   Product Specification
+==========================
+
+Use cases:
+ (*) Encrypt & decrypt files on file system
+ (*) Act as a secured "bank" of data - securely store data
+ (*) Manage accounts for different users
+
+
+More specific requirements: 
+ 1. Account management
+   1.1. Useer can delete account - will delete all users' data as well
+ 2. Encryption and decryption of data *must* be based on password alone (password will be the seed of encryption)

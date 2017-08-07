@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns = "http://www.springframework.org/schema/beans"
+   xmlns:xsi = "http://www.w3.org/2001/XMLSchema-instance"
+   xsi:schemaLocation = "http://www.springframework.org/schema/beans
+   http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+	<bean id = "configuration" class = "orm.Configuration">
+   		<property name = "rootDir" value = "/home/binyamink/DPApp/binyamink"/>
+  		<property name = "hashAlgoritm" value = "SHA-256"/>
+    	<property name = "blockSize" value = "4096"/>
+    	<property name = "charset" value = "UTF-8"/>
+    	<property name = "keySizeBits" value = "512"/>
+      
+    	<bean id = "severConfiguration" class = "orm.ServerConfiguration">
+			<property name = "screenWidth" value = "750"/>
+			<property name = "screenHeight" value = "500"/>
+			<property name = "rootDir" value = "/home/binyamink/DPApp/DPApp"/>
+			<property name = "rootDir" value = "/home/binyamink/DPApp"/>
+			<property name = "rootDir" value = "/home/binyamink/DPApp"/>
+			<property name = "rootDir" value = "/home/binyamink/DPApp"/>
+			<property name = "rootDir" value = "/home/binyamink/DPApp"/>
+			<property name = "rootDir" value = "/home/binyamink/DPApp"/>
+    	</bean> 
+ 	</bean>
+ 	
+ 	<bean id="dpapp" class="dpapp.model.DataProtectorImpl">
+ 		
+ 	</bean>
+ 	
+</beans>

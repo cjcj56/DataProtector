@@ -1,5 +1,6 @@
-package rsa;
+package dpapp.model;
 
+import static utils.CryptServices.*;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -13,53 +14,56 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.List;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.OneToOne;
 
-import static rsa.CryptServices.*;
+import rsa.Keys;
 
+@Entity
 public class Credentials {	
 	
-	private static long credIdGen = 0;
-	private static long assignCredId() { return ++credIdGen; }
 	private static boolean serverCredsCreated = false;
 	protected static void setServerCredsCreatedTrue() { serverCredsCreated = true; }
-	private static File secStoreDir = null;
-	protected static void setSecStoreDir(File path) {
-		secStoreDir = path;
-		
-		int maxCredId = 0;
-		if(fullDirPermissions(secStoreDir)) {
-			for (String file : secStoreDir.list()) {
-				int filename = maxCredId;
-				try {
-					filename = Integer.parseInt(file);
-				} catch (NumberFormatException ex) {
-					continue;
-				}
-				if(filename > maxCredId) maxCredId = filename;
-			}
-		}
-		credIdGen = maxCredId;
-	}
 	
+	@Id @GeneratedValue
 	private long credId;
 	private String username;
 	private byte[] hashedPassword;
 	private int salt;
+	@OneToOne
 	private Keys keys;
-
 	
+	
+	public Credentials() {}
+	
+	public Credentials(long credId, String username, byte[] hashedPassword, int salt, Keys keys) {
+		this.credId = credId;
+		this.username = username;
+		this.hashedPassword = hashedPassword;
+		this.salt = salt;
+		this.keys = keys;
+	}
+
 	public Credentials(String username, String password) {
-		this.credId = assignCredId();
 		this.username = username;
 		this.salt = (int) (100000 * Math.random());
-		this.hashedPassword = digest((password + salt).getBytes());
+		this.hashedPassword = hashPassword(password,this.salt);
 		keys = Keys.generateKeys();
 	}
 	
+	
+	public static byte[] hashPassword(String password, int salt) {
+		return digest((password + salt).getBytes());
+	}
+	
+	
+	/*
 	protected Credentials(long credId, Credentials serverCreds) {
 		this(credId, new File(secStoreDir.getAbsolutePath() + FS_DELIMITER + credId), serverCreds);
 	}
+	
 	
 	private Credentials(long credId, File file, Credentials serverCreds) {
 		this.credId = credId;
@@ -78,14 +82,14 @@ public class Credentials {
 			this.keys = new Keys(lines.get(3),lines.get(4),lines.get(5));
 //			this.keys = Keys.getKeyFromFile(reader, serverCreds);
 		} catch (FileNotFoundException ex) {
-			logger.log("Credentials", "Couldn't find file: \"" + file + "\"", ex);
+			getLogger().log("Credentials", "Couldn't find file: \"" + file + "\"", ex);
 		} catch (IOException ex) {
-			logger.log("Credentials", "Couldn't read key from file: \"" + file + "\"", ex);
+			getLogger().log("Credentials", "Couldn't read key from file: \"" + file + "\"", ex);
 		} finally {
 			if(reader != null) try { reader.close(); } catch (IOException ex) {}
 		}
 	}
-	
+	*/
 	
 	protected static Credentials createServerCreds(String username, String password, File path) {
 		if(serverCredsCreated) return null;
@@ -96,9 +100,11 @@ public class Credentials {
 		return cred;
 	}
 	
+	/*
 	protected void saveToFile(Credentials serverCreds) {
 		saveToFile(getCredFile(),serverCreds);
 	}
+	*/
 	
 	private void saveToFile(File credFile, Credentials serverCreds) {
 		BufferedWriter writer = null;
@@ -116,7 +122,7 @@ public class Credentials {
 			}
 			keys.saveKeyToFile(writer, serverCreds);
 		} catch (IOException ex) {
-			logger.log("Credentials", "Couldn't write credentials to file:" + credFile, ex);
+			getLogger().log("Credentials", "Couldn't write credentials to file:" + credFile, ex);
 		} finally { if(writer != null) try { writer.close(); } catch (IOException ex) {} }
 	}
 
@@ -195,9 +201,9 @@ public class Credentials {
 				writer.newLine();
 			}
 		} catch (FileNotFoundException ex) {
-			logger.log("Credentials", "Failed to write to temp out file: \"" + outFile + "\" - file not found!", ex);
+			getLogger().log("Credentials", "Failed to write to temp out file: \"" + outFile + "\" - file not found!", ex);
 		} catch (IOException ex) {
-			logger.log("Credentials", "Failed to read from in file: \"" + inFile + "\"!", ex);
+			getLogger().log("Credentials", "Failed to read from in file: \"" + inFile + "\"!", ex);
 		} finally {
 			try { if(bis != null)    bis.close();    } catch (IOException e) {}
 			try { if(writer != null) writer.close(); } catch (IOException e) {}
@@ -222,9 +228,9 @@ public class Credentials {
 				line = reader.readLine();
 			}
 		} catch (FileNotFoundException ex) {
-			logger.log("Credentials", "Failed to write to temp out file: \"" + outFile + "\" - file not found!", ex);
+			getLogger().log("Credentials", "Failed to write to temp out file: \"" + outFile + "\" - file not found!", ex);
 		} catch (IOException ex) {
-			logger.log("Credentials", "Failed to read from in file: \"" + inFile + "\"!", ex);
+			getLogger().log("Credentials", "Failed to read from in file: \"" + inFile + "\"!", ex);
 		} finally {
 			try { if(reader != null) reader.close(); } catch (IOException e) {}
 			try { if(ous != null)    ous.close();    } catch (IOException e) {}
@@ -244,7 +250,7 @@ public class Credentials {
 		File outFile = new File(fullPath + "_CRYPT" + idx + "."  + getFileType(fullPath));
 		try { assert outFile.createNewFile(); }
 		catch (IOException ex) {
-			logger.log("Credentials", "Encryption/Decryption Error! Failed to create temporary file during encryption/decryption", ex);
+			getLogger().log("Credentials", "Encryption/Decryption Error! Failed to create temporary file during encryption/decryption", ex);
 			return;
 		}
 
@@ -263,17 +269,61 @@ public class Credentials {
 			fileEncryption(path, encrypt);
 		} 
 	}
+
+	public long getCredId() {
+		return credId;
+	}
+
+	public void setCredId(long credId) {
+		this.credId = credId;
+	}
+
+	public String getUsername() {
+		return username;
+	}
+
+	public void setUsername(String username) {
+		this.username = username;
+	}
+
+	public byte[] getHashedPassword() {
+		return hashedPassword;
+	}
+
+	public void setHashedPassword(byte[] hashedPassword) {
+		this.hashedPassword = hashedPassword;
+	}
+
+	public int getSalt() {
+		return salt;
+	}
+
+	public void setSalt(int salt) {
+		this.salt = salt;
+	}
+
+	public Keys getKeys() {
+		return keys;
+	}
+
+	public void setKeys(Keys keys) {
+		this.keys = keys;
+	}
 	
-	
+/*	
 	protected int getSalt()              { return salt;           }
 	protected String getUsername()       { return username;       }
 	protected byte[] getHashedPassword() { return hashedPassword; }
-	protected long getCredId()           { return credId;         }
+	protected int getCredId()           { return credId;         }
 	protected File getCredFile()         { return new File(secStoreDir + FS_DELIMITER + credId); } 
 	protected void setPassword(String newPassword, Credentials serverCreds) {
 		hashedPassword = digest((newPassword + salt).getBytes());
 		saveToFile(secStoreDir, serverCreds);
 	}
+*/
+
+	
+	
 	
 //	=========================================================================================
 //	=========================================================================================

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+
+  <bean id="appConfiguration" class="dpapp.AppConfiguration">
+    <property name="rootDir" value="C:/temp/JEE"></property>
+    <property name="hashAlgorithm" value="SHA-256"></property>
+    <property name="blockSize" value="4096"></property>
+    <property name="charset" value="UTF-8"></property>
+    <property name="keySizeBits" value="512"></property>
+  </bean>
+
+  <bean id="serverConfiguration" class="dpapp.ServerConfiguration" parent="">
+    <property name="screenWidth" value="600"/>
+    <property name="screenHeight" value="450"/>
+    <property name="serverCreds">
+      <ref local="serverCreds"/>
+    </property>
+    <property name="maxLogFiles" value="5"/>
+    <property name="maxLogSizeKb" value="2048"/>
+  </bean>
+  
+  <bean id="serverCreds" class="dpapp.Credentials">
+    <constructor-arg index="0" value="admin"/>
+    <constructor-arg index="1" value="pass"/>
+  </bean>
+  
+<!--
+  <bean id="fileEventDao" class="com.devdaily.springtest1.dao.FileEventDao">
+    <property name="dataSource" ref="basicDataSource"/>
+  </bean>
+-->
+
+<!--
+  <bean id="basicDataSource" class="org.apache.commons.dbcp.BasicDataSource">
+    <property name="driverClassName" value="com.mysql.jdbc.Driver" />
+    <property name="url" value="jdbc:mysql://localhost/my_database" />
+    <property name="username" value="my_username" />
+    <property name="password" value="my_password" />
+    <property name="initialSize" value="3" />
+    <property name="maxActive" value="10" />
+  </bean>
+-->
+
+</beans>

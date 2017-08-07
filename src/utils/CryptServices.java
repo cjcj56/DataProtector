@@ -1,4 +1,4 @@
-package rsa;
+package utils;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -14,6 +14,9 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.cfg.Configuration;
 
 
 public class CryptServices {
@@ -32,39 +35,40 @@ public class CryptServices {
 	public static String DELIMITER = "g";
 	public static String ZERO_PLACEHOLDER = "h";
 	private static final DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-	protected static Logger logger = null;
-	
-	
-	protected static void createNewLogger(File path) {
-		logger = Logger.createLogger(path, logger);
-	}
-	
-	protected static boolean fullFilePermissions(File file) {
-		return ((file != null) && (file.exists()) && (file.isFile()) && (file.canRead()) && (file.canWrite()));
-	}
-	
-	protected static boolean fullDirPermissions(File file) {
-		return ((file != null) && (file.exists()) && (file.isDirectory()) && (file.canRead()) && (file.canWrite()) && (file.canExecute()));
-	}
-	
-	protected static String getFormattedTime() {
-		return dateFormat.format(Calendar.getInstance().getTime());
-	} 
+	private static Logger logger = null;
+	private static SessionFactory factory = new Configuration().configure().buildSessionFactory();;
 
-	protected static Long getTimeStamp() {
-		return Calendar.getInstance().getTime().getTime();
-	}
-	
 	private static MessageDigest hashFunction;
 	static {
-		try { hashFunction = MessageDigest.getInstance(HASH_ALGORITHM); }
-		catch (NoSuchAlgorithmException e) {System.out.println("ERROR!!!");} //TODO
+		try { 
+			hashFunction = MessageDigest.getInstance(HASH_ALGORITHM);
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+			System.exit(2);
+		}
 	}
 	
 	public static byte[] digest(byte[] bytes) {
 		return hashFunction.digest(bytes);
 	}
 
+	
+	// Changed from protected to public
+	public static void createNewLogger(File path) {
+		logger = Logger.createLogger(path, logger);
+	}
+	
+	
+	// Changed from protected to public
+	public static String getFormattedTime() {
+		return dateFormat.format(Calendar.getInstance().getTime());
+	} 
+
+	// Changed from protected to public
+	public static Long getTimeStamp() {
+		return Calendar.getInstance().getTime().getTime();
+	}
+	
 
 	public static String stringToHex(String str) {
 		char[] chars = str.toCharArray();
@@ -114,59 +118,52 @@ public class CryptServices {
 		return bytes;
 	}
 
-	public static String getFileType(String path) {
-		return path.substring(path.lastIndexOf(".") + 1); 
-	}
 
-	
-	public static <K,V> void writeHashMapToFile(HashMap<K, V> map, File path) {
-		BufferedWriter writer = null;
-		try {
-			writer = new BufferedWriter(new FileWriter(path));
-			for(K key : map.keySet()) {
-				writer.write(key + CONF_DELIMITER + map.get(key));
-				writer.newLine();
-			}
-		} catch (IOException e) {
-			logger.log("CryptServices", "Failed to write map to file: '" + path + "'.", e);
-		} finally { if(writer != null) try {writer.close();} catch(IOException e) {} }
-	}
-	
-	
-	public static HashMap<String, String> readHashMapFromFile(File path) {
-		BufferedReader reader = null;
-		HashMap<String, String> map = null;
-		try {
-			reader = new BufferedReader(new FileReader(path));
-			map = new HashMap<>();
-			
-			String line = reader.readLine();
-			while((line != null) && (! line.equals(""))) {
-				String[] attr_val = line.split(CONF_DELIMITER);
-				map.put(attr_val[0], attr_val[1]);
-				line = reader.readLine();
-			}
-			
-		} catch (FileNotFoundException e) {
-			logger.log("CryptServices", "File: '" + path + "' was not found.", e);
-		} catch (IOException e) {
-			logger.log("CryptServices", "Failed to read from file: '" + path + "'.", e);
-		} finally { if(reader != null) try {reader.close();} catch(IOException e) {} }
+	public static int byteArrayComparator(byte[] arr1, byte[] arr2) {
+		if (arr1.equals(arr2) ) {
+			return 0;
+		}
 		
-		return map;
+		if(arr1.length < arr2.length) {
+			return -1;
+		} else if (arr1.length > arr2.length) {
+			return 1;
+		}
+		
+		for (int i = 0; i < arr1.length; ++i) {
+			int cmpValue = Byte.compare(arr1[i], arr2[i]);
+			if(cmpValue != 0) {
+				return cmpValue;
+			}
+		}
+		
+		return 0;
 	}
 	
 	
 	// Setters
-	protected static void setHASH_ALGORITHM(String hASH_ALGORITHM) { HASH_ALGORITHM = hASH_ALGORITHM; }
-	protected static void setBLOCK_SIZE(int bLOCK_SIZE) { BLOCK_SIZE = bLOCK_SIZE; }
-	protected static void setCHARSET(Charset cHARSET) { CHARSET = cHARSET; }
-	protected static void setKEY_SIZE_BITS(int kEY_SIZE_BITS) { KEY_SIZE_BITS = kEY_SIZE_BITS; }
-	protected static void setENCRYPTION_BLOCK_SIZE(int eNCRYPTION_BLOCK_SIZE) { ENCRYPTION_BLOCK_SIZE = eNCRYPTION_BLOCK_SIZE; }
-	protected static void setLoggerMAX_LOG_FILES(int mAX_LOG_FILES) { logger.setMAX_LOG_FILES(mAX_LOG_FILES); }
-	protected static void setLoggerMAX_LOG_SIZE_KB(int mAX_LOG_SIZE_KB) { logger.setMAX_LOG_SIZE_KB(mAX_LOG_SIZE_KB); }
-
+	public static void setHASH_ALGORITHM(String hASH_ALGORITHM) { HASH_ALGORITHM = hASH_ALGORITHM; }
+	public static void setBLOCK_SIZE(int bLOCK_SIZE) { BLOCK_SIZE = bLOCK_SIZE; }
+	public static void setCHARSET(Charset cHARSET) { CHARSET = cHARSET; }
+	public static void setKEY_SIZE_BITS(int kEY_SIZE_BITS) { KEY_SIZE_BITS = kEY_SIZE_BITS; }
+	public static void setENCRYPTION_BLOCK_SIZE(int eNCRYPTION_BLOCK_SIZE) { ENCRYPTION_BLOCK_SIZE = eNCRYPTION_BLOCK_SIZE; }
+	public static void setLoggerMAX_LOG_FILES(int mAX_LOG_FILES) { logger.setMAX_LOG_FILES(mAX_LOG_FILES); }
+	public static void setLoggerMAX_LOG_SIZE_KB(int mAX_LOG_SIZE_KB) { logger.setMAX_LOG_SIZE_KB(mAX_LOG_SIZE_KB); }
 	public static void print(String str) { System.out.println(str); }
 
-//	public static void main(String[] args) throws Throwable {}
+	// Getters
+	
+	// TODO: Problematic????
+	public static Logger getLogger() {
+		return logger;
+	}
+
+	private static SessionFactory getFactory() {
+		return factory;
+	}
+	
+	public static Session openSession() {
+		return getFactory().openSession();
+	}
+	
 }

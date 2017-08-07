@@ -1,4 +1,6 @@
-package rsa;
+package utils;
+
+import static utils.CryptServices.*;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -7,8 +9,6 @@ import java.io.IOException;
 import java.util.HashMap;
 
 import javax.swing.JOptionPane;
-
-import static rsa.CryptServices.*;
 
 public class Logger {
 	

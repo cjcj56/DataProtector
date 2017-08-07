@@ -1,313 +1,128 @@
-package rsa;
+package dpapp.model;
 
-import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.Font;
-import java.awt.GridLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
+import static utils.CryptServices.*;
+
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.util.Arrays;
-import java.util.HashMap;
+import javax.persistence.Query;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.cfg.Configuration;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import javax.swing.JButton;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
+import dpapp.view.DataProtectorViewImpl;
 
-import static rsa.CryptServices.*;
+import java.util.Collection;
+import java.util.List;
+import utils.CryptServices;
 
-public class DataProtector implements ActionListener {
+public class DataProtectorImpl extends AbstractDataProtector {
 	
-	public static final int WIDTH = 750;
-	public static final int HEIGHT = 500;
-	private static final String ROOT_DIR = "DataProtector";
-	private static final String CONF_DIR = "Conf";
-	private static final String CONF_FILE = "properties.ini";
-	private static final String SEC_STORE_DIR = "SecStore";
-	private static final String USER_MAP_FILE = "userCredsMappings.ini";
-	private static final String LOG_DIR = "Logs";
-	
-	private HashMap<String, Component> componentMap;
-	private HashMap<String, Long> usersCreds;
-	private HashMap<String, String> configs;
-	private Credentials serverCreds, loggedUserCreds;
-	private String loggedUser;
-	private File rootDir, confDir, secStoreDir, logsDir, confFile, userCredMapFile;
-	private static String[] CONF_DEFAULT_ATTRS = {
-		"ServerCreds" + CONF_DELIMITER +  SEC_STORE_DIR + FS_DELIMITER + 0,
-		"RootDir" + CONF_DELIMITER +  ROOT_DIR, 
-		"HASH_ALGORITHM" + CONF_DELIMITER + "SHA-256",
-		"BLOCK_SIZE" + CONF_DELIMITER + 4096,
-		"CHARSET" + CONF_DELIMITER + "UTF-8",
-		"KEY_SIZE_BITS" + CONF_DELIMITER + 512,
-		"MAX_LOG_FILES" + CONF_DELIMITER + 5,
-		"MAX_LOG_SIZE_KB" + CONF_DELIMITER + 2048
-		};
-	
-	public DataProtector() { this(null); }
-	
-	public DataProtector(File file) {
-		this(file,JOptionPane.showConfirmDialog(null, "Is this your first use?", "Login", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION);
+	public DataProtectorImpl(Credentials loggedCreds) {	
+		super(loggedCreds);
 	}
-	
-	public DataProtector(File file, boolean install) {
-		usersCreds = new  HashMap<>();
-		componentMap = new HashMap<>();
-		JFileChooser fc = new JFileChooser();
-		fc.setCurrentDirectory(new File("C:\\temp\\")); //TODO : Remove this line!
-		componentMap.put("FileChooser", fc);
-		loggedUser = null;
-		loggedUserCreds = null;
-		
-		configs = new HashMap<>();
-		for(String conf : CONF_DEFAULT_ATTRS) {
-			String[] attr_val = conf.split(CONF_DELIMITER);
-			configs.put(attr_val[0], attr_val[1]);
-		}
-		
-		if((install) && (! checkInstallationDir(file))) {
-			file = selectRootDir(install);
-			rootDir = new File(file.getAbsolutePath() + FS_DELIMITER + ROOT_DIR);
-		}
-		else if ((! install) && (! checkWorkingDir(file))) {
-			rootDir = selectRootDir(install);
-		} else {
-			rootDir = file;
-		}
-		
-		confDir = new File(rootDir.getAbsolutePath() + FS_DELIMITER + CONF_DIR);
-		confFile = new File(confDir.getAbsolutePath() + FS_DELIMITER + CONF_FILE);
-		secStoreDir = new File(rootDir.getAbsolutePath() + FS_DELIMITER + SEC_STORE_DIR);
-		Credentials.setSecStoreDir(secStoreDir);
-		userCredMapFile = new File(secStoreDir.getAbsolutePath() + FS_DELIMITER + USER_MAP_FILE);
-		logsDir = new File(rootDir.getAbsolutePath() + FS_DELIMITER + LOG_DIR);
-		
-		if(install) { 
-			install();
-		} else {
-			importServerCreds();
-			Credentials.setServerCredsCreatedTrue();
-			importUsersCredsMappings();
-			importConfigs();
-		}
-		
-		CryptServices.createNewLogger(logsDir);	
-		
-				
-		// Window Frame
-		componentMap = new HashMap<String, Component>();
-		JFrame mainWindow = new JFrame("Data Protector");
-		componentMap.put("MainWindow",mainWindow);
-		
-		// Main panel
-		JPanel mainPanel = new JPanel(new BorderLayout());
-		componentMap.put("MainPanel",mainPanel);
-		mainWindow.add(mainPanel);
-				
-		// Create Title
-		Font titleFont = new Font("Times New Roman",Font.BOLD,30);
-		JLabel title = new JLabel("Data Protector");
-		title.setFont(titleFont);
-		title.setAlignmentX(JLabel.CENTER_ALIGNMENT);
-		mainPanel.add(title,BorderLayout.NORTH);		
-		
-		// Create control panel
-		JPanel controlPanel = new JPanel(new GridLayout(4,3));
 
-		// Create control buttons
-		Font btnFont = new Font("Times New Roman",Font.BOLD,24);
-		String [] controlBtnsText = {
-				"Login", "Logout", "Change Password",
-				"New User", "Delete User",  "Change Credentials",
-				"Choose File", "Encrypt", "Decrypt",  
-				"Configs", "Export Configs", "Import Configs" 
-				};
-		JButton [] btns = new JButton[controlBtnsText.length];
-		for (int i = 0; i < controlBtnsText.length; ++i) {
-			btns[i] = new JButton(controlBtnsText[i]);
-			btns[i].setFont(btnFont);
-			btns[i].addActionListener(this);
-			controlPanel.add(btns[i]);
-			componentMap.put(controlBtnsText[i], btns[i]);
-		}
-		mainPanel.add(controlPanel,BorderLayout.CENTER);
-		enableControlPanel(false);
-		
-		// Create user input field
-		JLabel selectedFile = new JLabel();
-		selectedFile.setFont(btnFont);
-		componentMap.put("SelectedFile", selectedFile);
-		
-		mainWindow.setSize(WIDTH, HEIGHT);
-		mainWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		mainWindow.pack();
-		mainWindow.setSize(mainWindow.getWidth(), HEIGHT);
-		mainWindow.setVisible(true);
-		mainWindow.revalidate();
-		mainWindow.repaint();
-	}
-	
-	
-	private File selectRootDir(boolean newInstallation) {
-		JOptionPane.showMessageDialog(null, "Please choose your working directory.");
-		
-		File file = null;
-		String message;
-		
-		JFileChooser fc = (JFileChooser) componentMap.get("FileChooser");
-		setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-		int userChoice = fc.showOpenDialog(null);
-		do {
-			message = null;
-			if(userChoice != JFileChooser.APPROVE_OPTION) {
-				message = "No selection detected.";
-			} else {
-				file = fc.getSelectedFile();
-				if ((newInstallation) && (! checkInstallationDir(file))) 
-					message = "Please choose a directory without a " + ROOT_DIR + " file.";
-				else if((! newInstallation) && (! checkWorkingDir(file)))
-					message = "Invalid working directory.";
-			}
-
-			if(message != null) {
-				userChoice = JOptionPane.showConfirmDialog(null, message
-						+ System.lineSeparator()
-						+ "If you want to login please select a file. Else, click 'No' to quit.",
-						"Login", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-				if(userChoice == JOptionPane.NO_OPTION) {
-					System.exit(0);
-				} else {
-					userChoice = fc.showOpenDialog(null);
-				}
-			} else {
-				break;
-			}
-		} while (true);
-		return file;
-	}
-	
-	
-	private static boolean checkWorkingDir(File rootDir) {
-		if(rootDir == null) return false;
-		File confDir, logDir,  confFile, secStoreDir, serverCreds;
-		confDir = new File(rootDir.getAbsolutePath() + FS_DELIMITER + CONF_DIR);
-		confFile = new File(confDir.getAbsolutePath() + FS_DELIMITER + CONF_FILE);
-		logDir = new File(rootDir.getAbsolutePath() + FS_DELIMITER + LOG_DIR);
-		secStoreDir = new File(rootDir.getAbsolutePath() + FS_DELIMITER + SEC_STORE_DIR);
-		serverCreds = new File(secStoreDir.getAbsolutePath() + FS_DELIMITER + 0);
-//		print("" + fullDirPermissions(rootDir));
-//		print("" + fullDirPermissions(confDir));
-//		print("" + fullDirPermissions(logDir));
-//		print("" + fullDirPermissions(secStoreDir));
-//		print("" + fullFilePermissions(confFile));
-//		print("" + fullFilePermissions(serverCreds));
-		return (
-				(fullDirPermissions(rootDir))
-				&& (fullDirPermissions(confDir))
-				&& (fullDirPermissions(logDir))
-				&& (fullDirPermissions(secStoreDir))
-				&&(fullFilePermissions(confFile))
-				&& (fullFilePermissions(serverCreds))
-//				&& (validateConfFile(confFile))
-//				&& (Credentials.validateCredFiles(serverCreds))
-				);
-	}
-	
-	
-	private static boolean checkInstallationDir(File path) {
-		if(! fullDirPermissions(path)) return false;
-		
-		for (String subDir : path.list())
-			if(subDir.equals(ROOT_DIR))
-				return false;
-		
-		return true;
-	}
-	
-	private File install() {
-		rootDir.mkdir();
-		confDir.mkdir();
-		secStoreDir.mkdir();
-		logsDir.mkdir();
-		String serverUsername = JOptionPane.showInputDialog("Please insert server administrator username:");
-		String serverPassword1 = JOptionPane.showInputDialog("Please insert server administrator password:");
-		String serverPassword2 = JOptionPane.showInputDialog("Please re-insert server administrator password for confirmation:");
-		while(! serverPassword1.equals(serverPassword2)) {
-			serverUsername = JOptionPane.showInputDialog("Passwords didn't match!" + System.lineSeparator() + "Please insert server administrator username:");
-			serverPassword1 = JOptionPane.showInputDialog("Please insert server administrator password:");
-			serverPassword2 = JOptionPane.showInputDialog("Please re-insert server administrator password for confirmation:");
-		}
-		serverCreds = Credentials.createServerCreds(serverUsername, serverPassword1, secStoreDir);
-		for(String config : CONF_DEFAULT_ATTRS) {
-			String[] attr_val = config.split(CONF_DELIMITER);
-			configs.put(attr_val[0], attr_val[1]);
-		}
-		configs.put("ServerCreds", secStoreDir.getAbsolutePath() + FS_DELIMITER + 0);
-		configs.put("RootDir", rootDir.getAbsolutePath());
-		exportConfigs();
-		try { userCredMapFile.createNewFile(); } catch(IOException e) {}
-		return rootDir;
-	}
-	
-	
 	@Override
-	public void actionPerformed(ActionEvent ev) {
-		JButton btn = (JButton) ev.getSource();
-		switch(btn.getText()) {
-		case "Login": login(); break;
-		case "Logout": logout(); break;
-		case "Change Credetials": changeCreds(); break;
-		case "New User": createNewUser(); break;
-		case "Delete User": deleteUser(); break;
-		case "Change Password": changePassword(); break;
-		case "Choose File": selectFile(); break;
-		case "Encrypt": encryption(true); break;
-		case "Decrypt": encryption(false); break;
-		case "Configs": configs(); break;
-		case "Export Configs": exportConfigs(); break;
-		case "Import Configs": importConfigs(); break;
-		case "Update Configuration": updateConfAttr(btn.getActionCommand()); break;
-		}
+	public void logout() {
+		// TODO Auto-generated method stub
 		
 	}
 
-	public boolean validateLoggedUser(String username, String password) {
-		return (
-				(loggedUser != null) && 
-				(loggedUserCreds != null) &&
-				(username.equals(loggedUser)) &&
-				(Arrays.equals(loggedUserCreds.getHashedPassword(), digest((password + loggedUserCreds.getSalt()).getBytes())))
-				);
+	@Override
+	public void encryptFile(String fullPathToFile) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void encryptFile(File file) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void decryptFile(String fullPathToFile) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void decryptFile(File file) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public String encrypt(String text) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String decrypt(String text) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void storeFile(String fullPathToFile) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void storeFile(File file) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public Collection<String> fetchAllTitles() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Collection<String> fetchTitlesContaining(String text) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public File fetchFile(String fullPathToFile) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void storeUserData(AbstractUserData data) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public AbstractUserData fetchUserData(String title) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Collection<AbstractUserData> fetchUserDataDataContaining(String text) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Collection<AbstractUserData> fetchUserDataTitleContaining(String text) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 	
 	
-	public Credentials validateUser(String username, String password) {
-		if(! usersCreds.containsKey(username)) return null;
-		long credId = usersCreds.get(username);
-		Credentials userCred = new Credentials(credId, serverCreds);
-		byte[] hashedPassword = digest((password + userCred.getSalt()).getBytes());
-		byte[] credHasedPassword = userCred.getHashedPassword();
-		if (username.equals(userCred.getUsername()) && (Arrays.equals(hashedPassword, credHasedPassword))) {
-			return userCred;
-		} else {
-			return null;
-		}
-	}
-	
+	/*
 	public void login() {
 		if(loggedUser != null) {
 			JOptionPane.showMessageDialog(null, "User: '" + loggedUser + "' is crrently logged in. Please logout before logging in again.");
@@ -331,6 +146,7 @@ public class DataProtector implements ActionListener {
 		loggedUserCreds = null;
 		enableControlPanel(false);
 	}
+	
 	
 	
 	public void changeCreds() {
@@ -525,7 +341,7 @@ public class DataProtector implements ActionListener {
 		if(validateConfs(newConfigs)) {
 			configs = newConfigs;
 		} else {
-			logger.log("DataProtector", "Configuration file: '" + confFile + "' is unvalid. Configs were ignored.");
+			getLogger().log("DataProtector", "Configuration file: '" + confFile + "' is unvalid. Configs were ignored.");
 		}
 	}
 	
@@ -566,7 +382,7 @@ public class DataProtector implements ActionListener {
 				userCredMapFile.delete();	
 			}
 			catch (IOException ex) {
-				logger.log("DataProtector", "Couldn't create '" + userCredMapFile + "'.", ex);
+				getLogger().log("DataProtector", "Couldn't create '" + userCredMapFile + "'.", ex);
 			}	
 		}
 		
@@ -578,7 +394,7 @@ public class DataProtector implements ActionListener {
 				writer.newLine();
 			}
 		} catch (IOException ex) {
-			logger.log("DataProtector", "Couldn't write to '" + userCredMapFile + "'.", ex);
+			getLogger().log("DataProtector", "Couldn't write to '" + userCredMapFile + "'.", ex);
 		} finally { if(writer != null) try { writer.close(); } catch (IOException ex) {} }
 		serverCreds.fileEncryption(userCredMapFile, true);
 	}
@@ -601,9 +417,9 @@ public class DataProtector implements ActionListener {
 				}
 			}
 		} catch (FileNotFoundException ex) {
-			logger.log("DataProtector", "File: '" + userCredMapFile + "' wan't found.", ex);
+			getLogger().log("DataProtector", "File: '" + userCredMapFile + "' wan't found.", ex);
 		} catch (IOException ex) {
-			logger.log("DataProtector", "Couldn't read file: '" + userCredMapFile + "'.", ex);
+			getLogger().log("DataProtector", "Couldn't read file: '" + userCredMapFile + "'.", ex);
 		} finally {
 			if(reader != null) try { reader.close(); } catch (IOException e) {}
 			serverCreds.fileEncryption(userCredMapFile, true);
@@ -659,5 +475,5 @@ public class DataProtector implements ActionListener {
 			e.printStackTrace();
 		}
 	}
-	
+	*/
 }

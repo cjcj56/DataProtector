@@ -1,5 +1,7 @@
 package rsa;
 
+import static utils.CryptServices.*;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -10,11 +12,18 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
-import static rsa.CryptServices.*;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
 
+import dpapp.model.Credentials;
+import utils.CryptServices;
+
+@Entity
 public class Keys {
 	
-	
+	@Id @GeneratedValue
+	private int keyId;
 	private BigInteger privateKey, publicKey, mod;
 	private Keys(BigInteger mod, BigInteger publicKey, BigInteger privateKey) {
 		this.mod = mod;
@@ -45,9 +54,9 @@ public class Keys {
 		return new Keys(n, e, d);
 	}
 	
-	public  BigInteger getPrivateKey() { return privateKey; }
-	public  BigInteger getPublicKey()  { return publicKey;  }
-	public  BigInteger getMod()        { return mod;        }
+	public BigInteger getPrivateKey() { return privateKey; }
+	public BigInteger getPublicKey()  { return publicKey;  }   // TODO: should I leave public getters to this data???
+	public BigInteger getMod()        { return mod;        }
 	
 	public String useKey(String message, boolean encrypt) {
 		if(message.length() == 0) return "";
@@ -83,14 +92,14 @@ public class Keys {
 			writer = new BufferedWriter(new FileWriter(file));
 			saveKeyToFile(writer, serverCreds);
 		} catch (IOException ex) {
-			logger.log("Keys", "Couldn't write key to file: \"" + file + "\"", ex);
+			getLogger().log("Keys", "Couldn't write key to file: \"" + file + "\"", ex);
 		} finally {
 			if(writer != null) try { writer.close(); } catch(IOException ex) {}
 		}
 		
 	}
 	
-	public static Keys getKeyFromFile(BufferedReader reader, Credentials serverCreds) throws IOException {
+	private static Keys getKeyFromFile(BufferedReader reader, Credentials serverCreds) throws IOException {
 		String n, e, d;
 		n = e = d = null;
 		n = reader.readLine();
@@ -114,9 +123,9 @@ public class Keys {
 			for(int i = 0; i < 3; ++i) reader.readLine();
 			k = getKeyFromFile(reader, serverCreds);
 		} catch (FileNotFoundException ex) {
-			logger.log("Keys", "Couldn't find file: \"" + file + "\"", ex);
+			getLogger().log("Keys", "Couldn't find file: \"" + file + "\"", ex);
 		} catch (IOException ex) {
-			logger.log("Keys", "Couldn't read key from file: \"" + file + "\"", ex);
+			getLogger().log("Keys", "Couldn't read key from file: \"" + file + "\"", ex);
 		} finally {
 			if(reader != null) try { reader.close(); } catch (IOException ex) {}
 		}
